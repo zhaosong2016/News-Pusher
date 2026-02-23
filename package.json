@@ -1,0 +1,20 @@
+{
+  "name": "news-pusher",
+  "version": "1.0.0",
+  "description": "自动获取科技新闻并通过微信推送",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": ["news", "ai", "wechat", "automation"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "node-cron": "^3.0.3",
+    "dotenv": "^16.4.7",
+    "axios": "^1.7.9"
+  }
+}
