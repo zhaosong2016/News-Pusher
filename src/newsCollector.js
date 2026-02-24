@@ -18,6 +18,7 @@ export class NewsCollector {
       barrons: this.fetchBarrons.bind(this),
       wired: this.fetchWired.bind(this),
       fastcompany: this.fetchFastCompany.bind(this),
+      theinformation: this.fetchTheInformation.bind(this),
       nytimes: this.fetchNYTimes.bind(this),
       reuters: this.fetchReuters.bind(this),
       guardian: this.fetchGuardian.bind(this),
@@ -82,17 +83,30 @@ export class NewsCollector {
       const rssUrl = 'https://techcrunch.com/feed/';
       const { data } = await axios.get(rssUrl);
 
-      const titleRegex = /<title><!\[CDATA\[(.*?)\]\]><\/title>/g;
-      const linkRegex = /<link>(.*?)<\/link>/g;
+      // 提取每个 <item> 块
+      const itemRegex = /<item>(.*?)<\/item>/gs;
+      const items = [...data.matchAll(itemRegex)].map(m => m[1]);
 
-      const titles = [...data.matchAll(titleRegex)].map(m => m[1]).slice(1, 4);
-      const links = [...data.matchAll(linkRegex)].map(m => m[1]).slice(1, 4);
+      const news = [];
+      for (const item of items.slice(0, 3)) {
+        const titleMatch = /<title>(.*?)<\/title>/.exec(item);
+        const linkMatch = /<link>(.*?)<\/link>/.exec(item);
+        
+        if (titleMatch && linkMatch) {
+          const title = titleMatch[1].trim();
+          const url = linkMatch[1].trim();
+          
+          if (title && url && title !== 'TechCrunch' && url.includes('techcrunch.com')) {
+            news.push({
+              title: title.replace(/&#\d+;/g, c => String.fromCharCode(parseInt(c.match(/\d+/)[0]))), // decode HTML entities
+              url,
+              source: 'TechCrunch'
+            });
+          }
+        }
+      }
 
-      return titles.map((title, i) => ({
-        title,
-        url: links[i],
-        source: 'TechCrunch'
-      }));
+      return news;
     } catch (error) {
       console.error('获取 TechCrunch 失败:', error.message);
       return [];
@@ -293,17 +307,30 @@ export class NewsCollector {
         headers: { 'User-Agent': 'Mozilla/5.0' }
       });
 
-      const titleRegex = /<title><!\[CDATA\[(.*?)\]\]><\/title>/g;
-      const linkRegex = /<link>(.*?)<\/link>/g;
+      // 提取每个 <item> 块
+      const itemRegex = /<item>(.*?)<\/item>/gs;
+      const items = [...data.matchAll(itemRegex)].map(m => m[1]);
 
-      const titles = [...data.matchAll(titleRegex)].map(m => m[1]).slice(1, 4);
-      const links = [...data.matchAll(linkRegex)].map(m => m[1]).slice(1, 4);
+      const news = [];
+      for (const item of items.slice(0, 3)) {
+        const titleMatch = /<title>(.*?)<\/title>/.exec(item);
+        const linkMatch = /<link>(.*?)<\/link>/.exec(item);
+        
+        if (titleMatch && linkMatch) {
+          const title = titleMatch[1].trim();
+          const url = linkMatch[1].trim();
+          
+          if (title && url && title !== 'WIRED' && url.includes('wired.com')) {
+            news.push({
+              title: title.replace(/&amp;/g, '&').replace(/&#\d+;/g, c => String.fromCharCode(parseInt(c.match(/\d+/)[0]))),
+              url,
+              source: 'Wired'
+            });
+          }
+        }
+      }
 
-      return titles.map((title, i) => ({
-        title,
-        url: links[i],
-        source: 'Wired'
-      }));
+      return news;
     } catch (error) {
       console.error('获取 Wired 失败:', error.message);
       return [];
@@ -332,6 +359,33 @@ export class NewsCollector {
       }));
     } catch (error) {
       console.error('获取 Fast Company 失败:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * 获取 The Information 科技新闻 (需要特殊处理)
+   */
+  async fetchTheInformation() {
+    try {
+      // The Information 通常需要订阅，尝试通过 RSS feed
+      const { data } = await axios.get('https://www.theinformation.com/feed.rss', {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+
+      const titleRegex = /<title>(.*?)<\/title>/g;
+      const linkRegex = /<link>(.*?)<\/link>/g;
+
+      const titles = [...data.matchAll(titleRegex)].map(m => m[1]).slice(1, 4);
+      const links = [...data.matchAll(linkRegex)].map(m => m[1]).slice(1, 4);
+
+      return titles.map((title, i) => ({
+        title,
+        url: links[i],
+        source: 'The Information'
+      }));
+    } catch (error) {
+      console.error('获取 The Information 失败:', error.message);
       return [];
     }
   }

@@ -1,5 +1,52 @@
 # 项目进展日志
 
+## 2026-02-24 (修复版)
+
+### 🔧 关键 Bug 修复
+- **🐛 修复 TechCrunch 和 Wired 无法采集的问题**：
+  - **根本原因**：当前 RSS feed 使用普通 `<title>` 标签，而不是 CDATA 格式，原有正则表达式 `/<title><!\[CDATA\[(.*?)\]\]><\/title>/` 完全不匹配
+  - **症状**：TechCrunch 和 Wired 虽然在 `.env` 配置中启用，但实际不返回任何新闻
+  - **解决方案**：
+    1. 改用普通 `<title>` 正则表达式进行匹配
+    2. 采用 `<item>` 块级别的提取方法，精确配对每个新闻项的标题和链接
+    3. 添加 HTML 实体解码（处理 `&#8217;` 等编码字符）
+  - **测试结果**：✅ 成功采集（各获得 3 条新闻）
+  - **验证**：`npm run start once` 从原来的 15 条新闻增至 19 条
+
+### 新增功能
+- ✨ **新增 The Information 新闻源代码**：添加了 The Information（专注科技商业报道的高端媒体）的采集模块
+
+### 技术验证
+- ✅ **TechCrunch 抓取验证**：已支持，使用 RSS 源 https://techcrunch.com/feed/ - 已修复 ✓
+- ✅ **Wired 抓取验证**：已支持，使用 RSS 源 https://www.wired.com/feed/rss - 已修复 ✓
+- ⚠️ **The Information 限制**：
+  - RSS feed URL (`https://www.theinformation.com/feed.rss`) 返回 HTTP 400
+  - 该媒体采用付费订阅模式，不提供公开 RSS feed
+  - 代码已添加但暂无法正常工作，需要订阅认证密钥
+  - 推荐作为后续可选集成项目
+
+### 测试结果
+- 📊 已测试的新闻源：19 条新闻成功采集
+- 🎯 实际推送新闻源：Hacker News、TechCrunch、Wired、The Verge、Ars Technica、36氪、Product Hunt 等
+
+## 2026-02-24
+
+### 新增功能
+- ✨ **新增 The Information 新闻源代码**：添加了 The Information（专注科技商业报道的高端媒体）的采集模块
+
+### 技术验证
+- ✅ **TechCrunch 抓取验证**：已支持，使用 RSS 源 https://techcrunch.com/feed/ - 测试通过 ✓
+- ✅ **Wired 抓取验证**：已支持，使用 RSS 源 https://www.wired.com/feed/rss - 测试通过 ✓
+- ⚠️ **The Information 限制**：
+  - RSS feed URL (`https://www.theinformation.com/feed.rss`) 返回 HTTP 400
+  - 该媒体采用付费订阅模式，不提供公开 RSS feed
+  - 代码已添加但暂无法正常工作，需要订阅认证密钥
+  - 推荐作为后续可选集成项目
+
+### 测试结果
+- 📊 已测试的新闻源：15+ 条新闻成功采集
+- 🎯 实际推送新闻源：Hacker News、TechCrunch、The Verge、Ars Technica、36氪、Product Hunt 等
+
 ## 2026-02-23
 
 ### 新增功能
