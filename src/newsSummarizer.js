@@ -73,8 +73,53 @@ ${newsText}
   }
 
   /**
-   * 降级方案：简单格式化新闻列表
+   * 对 KOL 内容进行 AI 解读
    */
+  async summarizeKOL(kolList) {
+    if (!kolList || kolList.length === 0) return '';
+
+    const kolText = kolList.map((item, index) =>
+      `${index + 1}. [${item.category}] ${item.source}\n   标题: ${item.title}\n   摘要: ${item.summary || '(无摘要)'}\n   链接: ${item.url}`
+    ).join('\n\n');
+
+    const prompt = `你是一个善于把复杂事情讲清楚的朋友。以下是过去7天一些科技领域重要人物写的文章或播客内容：
+
+${kolText}
+
+请用普通人能看懂的方式解读，按以下格式输出：
+
+🧠 思想领袖动态 (${new Date().toLocaleDateString('zh-CN')})
+
+【这周他们在聊什么】
+用1-2句大白话说清楚这些人最近关注的核心话题是什么。
+
+【逐条说人话】
+对每条内容：
+- 先用一句话说"他在说什么"（假设读者完全不懂技术）
+- 再用一句话说"这跟我有什么关系"或"为什么值得知道"
+
+要求：
+- 不用专业术语，如果必须用，立刻解释
+- 语气像朋友聊天，不像报告
+- 不需要显得很厉害，只需要让人看懂`;
+
+    try {
+      const message = await this.client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      });
+      return message.content[0].text;
+    } catch (error) {
+      console.error('KOL 解读失败:', error.message);
+      // 降级：直接列出
+      return `🧠 思想领袖动态\n\n` + kolList.map(item =>
+        `• [${item.category}] ${item.source}\n  ${item.title}\n  ${item.url}`
+      ).join('\n\n');
+    }
+  }
+
+
   generateFallbackSummary(newsList) {
     const date = new Date().toLocaleDateString('zh-CN');
     let summary = `📰 今日科技要闻 (${date})\n\n`;

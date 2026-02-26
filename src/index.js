@@ -3,6 +3,7 @@ import cron from 'node-cron';
 import { NewsCollector } from './newsCollector.js';
 import { NewsSummarizer } from './newsSummarizer.js';
 import { WechatPusher } from './wechatPusher.js';
+import { KOLCollector } from './kolCollector.js';
 
 /**
  * 主程序 - 新闻推送服务
@@ -10,6 +11,7 @@ import { WechatPusher } from './wechatPusher.js';
 class NewsPusherService {
   constructor() {
     this.newsCollector = new NewsCollector();
+    this.kolCollector = new KOLCollector();
     this.newsSummarizer = new NewsSummarizer(process.env.ANTHROPIC_API_KEY);
     this.wechatPusher = new WechatPusher({
       serverChanKey: process.env.SERVER_CHAN_KEY,
@@ -31,24 +33,36 @@ class NewsPusherService {
     console.log(`\n🚀 开始执行新闻推送任务 - ${new Date().toLocaleString('zh-CN')}`);
 
     try {
-      console.log('📡 正在获取新闻...');
-      const news = await this.newsCollector.collectNews(
-        this.config.sources,
-        this.config.maxCount
-      );
+      // 并行抓取 KOL 内容和新闻
+      console.log('📡 正在获取新闻和 KOL 内容...');
+      const [news, kolItems] = await Promise.all([
+        this.newsCollector.collectNews(this.config.sources, this.config.maxCount),
+        this.kolCollector.collectKOL()
+      ]);
 
-      if (news.length === 0) {
-        console.log('⚠️  未获取到新闻内容');
+      if (news.length === 0 && kolItems.length === 0) {
+        console.log('⚠️  未获取到任何内容');
         return;
       }
 
-      console.log(`✅ 获取到 ${news.length} 条新闻`);
+      console.log(`✅ 获取到 ${news.length} 条新闻，${kolItems.length} 条 KOL 内容`);
 
-      console.log('🤖 正在使用 AI 总结新闻...');
-      const summary = await this.newsSummarizer.summarizeNews(news);
+      // 分别生成 KOL 解读和新闻总结
+      console.log('🤖 正在使用 AI 处理内容...');
+      const [kolSummary, newsSummary] = await Promise.all([
+        kolItems.length > 0 ? this.newsSummarizer.summarizeKOL(kolItems) : Promise.resolve(''),
+        news.length > 0 ? this.newsSummarizer.summarizeNews(news) : Promise.resolve('')
+      ]);
+
+      // KOL 内容放前面，新闻放后面
+      const fullContent = [
+        kolSummary,
+        kolSummary && newsSummary ? '\n━━━━━━━━━━━━━━━━━━\n' : '',
+        newsSummary
+      ].filter(Boolean).join('\n');
 
       console.log('📱 正在推送到微信...');
-      const success = await this.wechatPusher.push('📰 今日科技要闻', summary);
+      const success = await this.wechatPusher.push('📰 今日科技要闻', fullContent);
 
       if (success) {
         console.log('✅ 新闻推送完成！');
