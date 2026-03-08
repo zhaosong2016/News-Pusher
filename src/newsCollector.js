@@ -13,6 +13,7 @@ export class NewsCollector {
       cnbeta: this.fetchCnBeta.bind(this),
       theverge: this.fetchTheVerge.bind(this),
       arstechnica: this.fetchArsTechnica.bind(this),
+      ycombinator: this.fetchYCombinator.bind(this),
       producthunt: this.fetchProductHunt.bind(this),
       reddit: this.fetchRedditTech.bind(this),
       barrons: this.fetchBarrons.bind(this),
@@ -516,6 +517,34 @@ export class NewsCollector {
       });
     } catch (error) {
       console.error('获取 Ars Technica 失败:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * 获取 Y Combinator 博客动态
+   */
+  async fetchYCombinator() {
+    try {
+      const { data } = await axios.get('https://www.ycombinator.com/blog/feed', {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+
+      const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+      const items = [...data.matchAll(itemRegex)].slice(0, 3);
+
+      return items.map(item => {
+        const titleMatch = item[1].match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
+        const linkMatch = item[1].match(/<link>(https?:\/\/[^<]+)<\/link>/);
+
+        return {
+          title: titleMatch ? titleMatch[1] : 'Unknown',
+          url: linkMatch ? linkMatch[1].trim() : 'https://www.ycombinator.com/blog',
+          source: 'Y Combinator'
+        };
+      });
+    } catch (error) {
+      console.error('获取 Y Combinator 失败:', error.message);
       return [];
     }
   }
