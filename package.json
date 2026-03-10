@@ -8,13 +8,19 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },
-  "keywords": ["news", "ai", "wechat", "automation"],
+  "keywords": [
+    "news",
+    "ai",
+    "wechat",
+    "automation"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
-    "node-cron": "^3.0.3",
+    "apify-client": "^2.22.2",
+    "axios": "^1.7.9",
     "dotenv": "^16.4.7",
-    "axios": "^1.7.9"
+    "node-cron": "^3.0.3"
   }
 }

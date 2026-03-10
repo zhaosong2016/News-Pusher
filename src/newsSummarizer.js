@@ -109,7 +109,11 @@ ${kolText}
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }]
       });
-      return message.content[0].text;
+      const aiInterpretation = message.content[0].text;
+      const linkList = kolList.map(item =>
+        `• ${item.source}：${item.title}\n  ${item.url}`
+      ).join('\n\n');
+      return `${aiInterpretation}\n\n━━━━━━━━━━━━━━━━━━\n\n📎 原文链接\n\n${linkList}`;
     } catch (error) {
       console.error('KOL 解读失败:', error.message);
       // 降级：直接列出

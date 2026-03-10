@@ -18,6 +18,24 @@ export class KOLCollector {
       { name: 'OpenAI Blog', url: 'https://openai.com/blog/rss.xml', category: '官方发声' },
       // 🎙 播客
       { name: 'Lex Fridman Podcast', url: 'https://lexfridman.com/feed/podcast/', category: '深度访谈' },
+
+      // 📰 Google News - 科技/AI 领域 KOL
+      { name: 'Elon Musk', url: 'https://news.google.com/rss/search?q=Elon+Musk&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+      { name: 'Sam Altman', url: 'https://news.google.com/rss/search?q=Sam+Altman&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+      { name: 'Yann LeCun', url: 'https://news.google.com/rss/search?q=Yann+LeCun&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+      { name: 'Andrej Karpathy', url: 'https://news.google.com/rss/search?q=Andrej+Karpathy&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+      { name: 'George Hotz', url: 'https://news.google.com/rss/search?q=George+Hotz&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+      { name: 'Demis Hassabis', url: 'https://news.google.com/rss/search?q=Demis+Hassabis&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+
+      // 📰 Google News - 投资/商业领域 KOL
+      { name: 'Marc Andreessen', url: 'https://news.google.com/rss/search?q=Marc+Andreessen&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+      { name: 'Naval Ravikant', url: 'https://news.google.com/rss/search?q=Naval+Ravikant&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+      { name: 'Balaji Srinivasan', url: 'https://news.google.com/rss/search?q=Balaji+Srinivasan&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+      { name: 'Chamath Palihapitiya', url: 'https://news.google.com/rss/search?q=Chamath+Palihapitiya&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+
+      // 📰 Google News - 思想/评论家
+      { name: 'Nassim Taleb', url: 'https://news.google.com/rss/search?q=Nassim+Taleb&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
+      { name: 'Patrick Collison', url: 'https://news.google.com/rss/search?q=Patrick+Collison&hl=en&gl=US&ceid=US:en', category: 'KOL 动态' },
     ];
   }
 

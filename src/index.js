@@ -4,6 +4,7 @@ import { NewsCollector } from './newsCollector.js';
 import { NewsSummarizer } from './newsSummarizer.js';
 import { WechatPusher } from './wechatPusher.js';
 import { KOLCollector } from './kolCollector.js';
+import { YouTubeCollector } from './youtubeCollector.js';
 
 /**
  * 主程序 - 新闻推送服务
@@ -12,6 +13,7 @@ class NewsPusherService {
   constructor() {
     this.newsCollector = new NewsCollector();
     this.kolCollector = new KOLCollector();
+    this.youtubeCollector = new YouTubeCollector(process.env.APIFY_API_TOKEN);
     this.newsSummarizer = new NewsSummarizer(process.env.ANTHROPIC_API_KEY);
     this.wechatPusher = new WechatPusher({
       serverChanKey: process.env.SERVER_CHAN_KEY,
@@ -33,33 +35,45 @@ class NewsPusherService {
     console.log(`\n🚀 开始执行新闻推送任务 - ${new Date().toLocaleString('zh-CN')}`);
 
     try {
-      // 并行抓取 KOL 内容和新闻
-      console.log('📡 正在获取新闻和 KOL 内容...');
-      const [news, kolItems] = await Promise.all([
+      // 并行抓取新闻、KOL 内容、YouTube 视频
+      console.log('📡 正在获取新闻、KOL 内容和 YouTube 视频...');
+      const [news, kolItems, youtubeVideos] = await Promise.all([
         this.newsCollector.collectNews(this.config.sources, this.config.maxCount),
-        this.kolCollector.collectKOL()
+        this.kolCollector.collectKOL(),
+        this.youtubeCollector.collectAllVideos()
       ]);
 
-      if (news.length === 0 && kolItems.length === 0) {
+      if (news.length === 0 && kolItems.length === 0 && youtubeVideos.length === 0) {
         console.log('⚠️  未获取到任何内容');
         return;
       }
 
-      console.log(`✅ 获取到 ${news.length} 条新闻，${kolItems.length} 条 KOL 内容`);
+      console.log(`✅ 获取到 ${news.length} 条新闻，${kolItems.length} 条 KOL 内容，${youtubeVideos.length} 个视频`);
 
-      // 分别生成 KOL 解读和新闻总结
+      // 分别生成 KOL 解读、新闻总结、YouTube 视频列表
       console.log('🤖 正在使用 AI 处理内容...');
       const [kolSummary, newsSummary] = await Promise.all([
         kolItems.length > 0 ? this.newsSummarizer.summarizeKOL(kolItems) : Promise.resolve(''),
         news.length > 0 ? this.newsSummarizer.summarizeNews(news) : Promise.resolve('')
       ]);
 
-      // KOL 内容放前面，新闻放后面
+      // 生成 YouTube 视频列表
+      let youtubeSummary = '';
+      if (youtubeVideos.length > 0) {
+        youtubeSummary = '📺 **KOL 视频动态**\n\n';
+        youtubeVideos.forEach(video => {
+          youtubeSummary += `**${video.kolName}**\n`;
+          youtubeSummary += `${video.title}\n`;
+          youtubeSummary += `${video.url}\n\n`;
+        });
+      }
+
+      // 组合内容：KOL 内容 -> YouTube 视频 -> 新闻
       const fullContent = [
         kolSummary,
-        kolSummary && newsSummary ? '\n━━━━━━━━━━━━━━━━━━\n' : '',
+        youtubeSummary,
         newsSummary
-      ].filter(Boolean).join('\n');
+      ].filter(Boolean).join('\n━━━━━━━━━━━━━━━━━━\n');
 
       console.log('📱 正在推送到微信...');
       const success = await this.wechatPusher.push('📰 今日科技要闻', fullContent);
