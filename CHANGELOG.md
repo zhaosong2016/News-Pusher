@@ -1,5 +1,24 @@
 # 项目进展日志
 
+## 2026-03-10
+
+### 新增功能
+- 📺 **YouTube KOL 视频追踪**：使用 Apify YouTube Scraper 追踪 11 个科技/商业 KOL 的演讲和访谈
+  - 追踪对象：Elon Musk、Sam Altman、Yann LeCun、Andrej Karpathy、George Hotz、Marc Andreessen、Naval Ravikant、Balaji Srinivasan、Chamath Palihapitiya、Nassim Taleb、Patrick Collison
+  - 关键词过滤：interview、keynote、talk、speech、lecture
+  - 只抓取 24 小时内发布的视频
+  - 自动去重（同一视频可能被多个频道转发）
+  - 费用：约 $1.8/月（免费 $5 额度可用 2-3 个月）
+
+### 技术探索
+- ❌ **尝试 Apify Twitter Scraper**：需要付费套餐 $49/月，不支持免费计划，放弃
+- ❌ **尝试 Google News RSS 追踪 KOL**：在国内被墙，服务器也无法访问，放弃
+- ✅ **成功接入 Apify YouTube Scraper**：免费账户可用，搜索方式抓取，效果良好
+
+### 部署
+- 🚀 整合 YouTube 采集到主程序，每天早上 8:00 自动推送
+- 📦 安装 `apify-client` 依赖包
+
 ## 2026-03-08
 
 ### 新增功能
