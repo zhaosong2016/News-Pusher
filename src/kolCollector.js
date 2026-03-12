@@ -64,8 +64,8 @@ export class KOLCollector {
 
         if (!title || !link) continue;
 
-        // 只取 7 天内的内容
-        if (pubDate && !this._isRecent(pubDate, 7)) continue;
+        // 只取 24 小时内的内容
+        if (pubDate && !this._isRecent(pubDate, 1)) continue;
 
         items.push({
           title: this._decodeEntities(title),

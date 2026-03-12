@@ -50,23 +50,13 @@ class NewsPusherService {
 
       console.log(`✅ 获取到 ${news.length} 条新闻，${kolItems.length} 条 KOL 内容，${youtubeVideos.length} 个视频`);
 
-      // 分别生成 KOL 解读、新闻总结、YouTube 视频列表
+      // 分别生成 KOL 解读、YouTube 视频解读、新闻总结
       console.log('🤖 正在使用 AI 处理内容...');
-      const [kolSummary, newsSummary] = await Promise.all([
+      const [kolSummary, youtubeSummary, newsSummary] = await Promise.all([
         kolItems.length > 0 ? this.newsSummarizer.summarizeKOL(kolItems) : Promise.resolve(''),
+        youtubeVideos.length > 0 ? this.newsSummarizer.summarizeYouTube(youtubeVideos) : Promise.resolve(''),
         news.length > 0 ? this.newsSummarizer.summarizeNews(news) : Promise.resolve('')
       ]);
-
-      // 生成 YouTube 视频列表
-      let youtubeSummary = '';
-      if (youtubeVideos.length > 0) {
-        youtubeSummary = '📺 **KOL 视频动态**\n\n';
-        youtubeVideos.forEach(video => {
-          youtubeSummary += `**${video.kolName}**\n`;
-          youtubeSummary += `${video.title}\n`;
-          youtubeSummary += `${video.url}\n\n`;
-        });
-      }
 
       // 组合内容：KOL 内容 -> YouTube 视频 -> 新闻
       const fullContent = [

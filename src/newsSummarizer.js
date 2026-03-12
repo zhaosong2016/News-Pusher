@@ -73,6 +73,55 @@ ${newsText}
   }
 
   /**
+   * 对 YouTube 视频进行 AI 解读
+   */
+  async summarizeYouTube(videos) {
+    if (!videos || videos.length === 0) return '';
+
+    const videoText = videos.map((v, i) => {
+      let text = `${i + 1}. ${v.kolName}：《${v.title}》\n   链接: ${v.url}`;
+      if (v.description) text += `\n   简介: ${v.description}`;
+      return text;
+    }).join('\n\n');
+
+    const prompt = `你是一个善于把复杂事情讲清楚的朋友。以下是最近 24 小时内科技领域重要人物发布的演讲或访谈视频：
+
+${videoText}
+
+请用普通人能看懂的方式解读，按以下格式输出：
+
+📺 KOL 视频动态 (${new Date().toLocaleDateString('zh-CN')})
+
+【这些视频在聊什么】
+用1-2句话概括这些视频的核心主题。
+
+【逐条解读】
+对每个视频：
+- 先用一句话说"他在谈什么"（假设读者完全不懂技术）
+- 再用一句话说"为什么值得看"或"和我们有什么关系"
+- 附上视频链接
+
+要求：
+- 不用专业术语，如果必须用，立刻解释
+- 语气像朋友聊天，不像报告
+- 帮读者判断这个视频值不值得花时间看`;
+
+    try {
+      const message = await this.client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      });
+      return message.content[0].text;
+    } catch (error) {
+      console.error('YouTube 视频解读失败:', error.message);
+      return '📺 **KOL 视频动态**\n\n' + videos.map(v =>
+        `**${v.kolName}**\n${v.title}\n${v.url}`
+      ).join('\n\n');
+    }
+  }
+
+  /**
    * 对 KOL 内容进行 AI 解读
    */
   async summarizeKOL(kolList) {

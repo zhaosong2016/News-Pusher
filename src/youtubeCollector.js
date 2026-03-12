@@ -78,7 +78,7 @@ export class YouTubeCollector {
       // 获取结果
       const { items } = await this.client.dataset(run.defaultDatasetId).listItems();
 
-      // 过滤：只要最近 7 天的
+      // 过滤：只要最近 24 小时内的
       const filtered = items.filter(video => {
         return this.isRecent(video.date || video.uploadDate);
       });
@@ -91,13 +91,87 @@ export class YouTubeCollector {
         kolName: kolName,
         publishedAt: video.date || video.uploadDate,
         views: video.viewCount,
-        duration: video.duration
+        duration: video.duration,
+        description: (video.description || '').slice(0, 500)
       }));
 
     } catch (error) {
       console.error(`❌ ${kolName} 抓取失败:`, error.message);
       return [];
     }
+  }
+
+  /**
+   * 标题相似度去重（同一场访谈的不同转发）
+   */
+  deduplicateByTitleSimilarity(videos) {
+    if (videos.length === 0) return [];
+
+    // 按 KOL 分组
+    const byKOL = {};
+    for (const video of videos) {
+      if (!byKOL[video.kolName]) byKOL[video.kolName] = [];
+      byKOL[video.kolName].push(video);
+    }
+
+    const result = [];
+
+    for (const [kolName, kolVideos] of Object.entries(byKOL)) {
+      const kept = [];
+      const removed = new Set();
+
+      for (let i = 0; i < kolVideos.length; i++) {
+        if (removed.has(i)) continue;
+
+        const video1 = kolVideos[i];
+        const similar = [video1];
+
+        // 找出所有与 video1 相似的视频
+        for (let j = i + 1; j < kolVideos.length; j++) {
+          if (removed.has(j)) continue;
+
+          const video2 = kolVideos[j];
+          const similarity = this.calculateTitleSimilarity(video1.title, video2.title);
+
+          if (similarity > 0.4) {  // 40% 相似度阈值
+            similar.push(video2);
+            removed.add(j);
+          }
+        }
+
+        // 从相似的视频中选播放量最高的
+        const best = similar.reduce((a, b) => (a.views || 0) > (b.views || 0) ? a : b);
+        kept.push(best);
+      }
+
+      result.push(...kept);
+    }
+
+    return result;
+  }
+
+  /**
+   * 计算两个标题的相似度（Jaccard 相似度）
+   */
+  calculateTitleSimilarity(title1, title2) {
+    // 去除噪音词
+    const noise = ['full', 'interview', 'keynote', 'talk', 'speech', 'lecture', 'discussion',
+                   'exclusive', 'complete', 'entire', 'watch', 'live', 'official'];
+
+    const normalize = (str) => {
+      return str.toLowerCase()
+        .replace(/[^\w\s]/g, ' ')  // 去标点
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !noise.includes(w));
+    };
+
+    const words1 = new Set(normalize(title1));
+    const words2 = new Set(normalize(title2));
+
+    const intersection = new Set([...words1].filter(w => words2.has(w)));
+    const union = new Set([...words1, ...words2]);
+
+    return union.size === 0 ? 0 : intersection.size / union.size;
   }
 
   /**
@@ -121,18 +195,32 @@ export class YouTubeCollector {
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    // 去重：根据视频 URL
+    // 去重：根据视频 ID（避免同一视频因 URL 参数不同被重复计入）
     const uniqueVideos = [];
-    const seenUrls = new Set();
+    const seenIds = new Set();
+
+    const getVideoId = (url) => {
+      try {
+        return new URL(url).searchParams.get('v') || url;
+      } catch {
+        return url;
+      }
+    };
 
     for (const video of allVideos) {
-      if (!seenUrls.has(video.url)) {
-        seenUrls.add(video.url);
+      const videoId = getVideoId(video.url);
+      if (!seenIds.has(videoId)) {
+        seenIds.add(videoId);
         uniqueVideos.push(video);
       }
     }
 
-    console.log(`\n📺 共找到 ${allVideos.length} 个视频，去重后 ${uniqueVideos.length} 个`);
-    return uniqueVideos;
+    console.log(`\n📺 第一轮去重：${allVideos.length} 个视频 → ${uniqueVideos.length} 个`);
+
+    // 第二轮去重：按标题相似度（同一场访谈的不同转发）
+    const dedupedByTitle = this.deduplicateByTitleSimilarity(uniqueVideos);
+
+    console.log(`📺 第二轮去重：${uniqueVideos.length} 个视频 → ${dedupedByTitle.length} 个`);
+    return dedupedByTitle;
   }
 }
